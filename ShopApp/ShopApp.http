@@ -1,5 +1,4 @@
 @ShopApp_HostAddress = http://localhost:5259
-
 GET {{ShopApp_HostAddress}}/weatherforecast/
 Accept: application/json
 
@@ -8,4 +7,15 @@ GET {{ShopApp_HostAddress}}/api/Items
 Accept: application/json
 ###
 GET {{ShopApp_HostAddress}}/api/items/20
+Accept: application/json
+
+###
+POST https://e437-37-52-79-159.ngrok-free.app/api/product
+Content-Type: application/json
+{
+  "Title": "Mouse",
+  "Price": 46.2
+}
+###
+GET https://e437-37-52-79-159.ngrok-free.app/api/product
 Accept: application/json

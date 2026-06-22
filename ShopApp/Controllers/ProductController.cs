@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using ShopApp.Interfaces;
 using ShopDomain.Models;
 
 namespace ShopApp.Controllers
@@ -7,23 +8,23 @@ namespace ShopApp.Controllers
     [Route("api/[controller]")]
     public class ProductController:ControllerBase
     {
-        private List<Product> _products = new();
+        private readonly IProductService _productService;
+        public ProductController(IProductService productService)
+        {
+            _productService = productService;
+        }
+
         [HttpGet]
         public List<Product> GetProducts()
         {
-            _products.Add(new Product()
-            {
-                Title = "Milk",
-                Price = 44.6f
-            });
+            return _productService.GetAllProducts();
+        }
 
-            _products.Add(new Product()
-            {
-                Title = "Bread",
-                Price = 44.6f
-            });
-            return _products;
-
+        [HttpPost]
+        public IActionResult AddNewProduct([FromBody] Product product)
+        {
+            _productService.AddProduct(product);
+            return Created();
         }
     }
 }
