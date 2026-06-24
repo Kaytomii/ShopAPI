@@ -19,3 +19,13 @@ Content-Type: application/json
 ###
 GET https://e437-37-52-79-159.ngrok-free.app/api/product
 Accept: application/json
+
+###
+POST {{ShopApp_HostAddress}}/api/user/register
+Content-Type: application/json
+{
+  "id": 1,
+  "Login": "admin",
+  "HashPassword": "hash",
+  "Email": "example@gmail.com"
+}

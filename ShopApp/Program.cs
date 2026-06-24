@@ -1,5 +1,6 @@
 
 using ShopApp.Interfaces;
+using ShopApp.MiddleWares;
 using ShopApp.Services;
 
 namespace ShopApp
@@ -15,6 +16,7 @@ namespace ShopApp
             builder.Services.AddControllers();
             builder.Services.AddSingleton<IProductService, ProductService>();
             builder.Services.AddSingleton<ICategoryService, CategoryService>();
+            builder.Services.AddSingleton<IUserService, UserService>();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
@@ -28,10 +30,11 @@ namespace ShopApp
 
             app.UseHttpsRedirection();
 
+           
             app.UseAuthorization();
-
-
+            app.UseMiddleware<UserCheckMiddleware>();
             app.MapControllers();
+            
 
             app.Run();
         }
