@@ -32,6 +32,7 @@ namespace ShopApp
 
            
             app.UseAuthorization();
+            app.UseStaticFiles();
             app.UseMiddleware<UserCheckMiddleware>();
             app.MapControllers();
             
