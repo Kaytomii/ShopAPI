@@ -1,7 +1,7 @@
-﻿using ShopApp.Interfaces;
+﻿using ShopApi.Interfaces;
 using ShopDomain.Models;
 
-namespace ShopApp.Services;
+namespace ShopApi.Services;
 
 public class UserService : IUserService
 {

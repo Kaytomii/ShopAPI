@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ShopApp.Interfaces;
+using ShopApi.Interfaces;
 using ShopDomain.Models;
 
 namespace ShopApp.Controllers

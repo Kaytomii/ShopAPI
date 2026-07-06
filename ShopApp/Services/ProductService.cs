@@ -1,6 +1,6 @@
-﻿using ShopApp.Interfaces;
+﻿using ShopApi.Interfaces;
 using ShopDomain.Models;
-namespace ShopApp.Services
+namespace ShopApi.Services
 {
     public class ProductService : IProductService
     {
@@ -15,14 +15,14 @@ namespace ShopApp.Services
         {
             _products.Add(new Product()
             {
-                Title = "Milk",
-                Price = 44.6f
+                Name = "Milk",
+                Price = 44.6m
             });
 
             _products.Add(new Product()
             {
-                Title = "Bread",
-                Price = 44.6f
+                Name = "Bread",
+                Price = 44.6m
             });
             return _products;
 

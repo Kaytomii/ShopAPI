@@ -1,17 +1,44 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ShopApp.Services;
-using ShopApp.Interfaces;
-using ShopDomain.Models;
-namespace ShopApp.Controllers;
+using ShopApi.Interfaces;
+using Shop.Application.Interfaces.Services;
+using Shop.Application.DTOs.CategoryDTOs;
+using ShopApi.Requests.Categories;
+
+
+namespace ShopApi.Controllers;
 
 
 [ApiController]
-[Route("api/[controller]")]
-public class CategoryController(ICategoryService _categoryService) : ControllerBase
+[Route("api/v1/[controller]")]
+public class CategoryController(ICategoryService _categoryService, IImageService _imageService) : ControllerBase
 {
-    [HttpGet]
-    public List<Category> GetCategories()
+    [HttpPost]
+    public async Task<IActionResult> CreateCategory([FromForm] CategoryCreateRequest dto)
     {
-        return _categoryService.GetAllCategories();
+        if (dto.Image != null)
+
+        {
+
+            dto.Url = (await _imageService.SaveFileAsync(dto.Image, Enums.ImageDirectoryEnum.Categories)) ?? string.Empty;
+
+        }
+
+
+        var createDto = new CategoryCreateDTO
+        {
+
+            Name = dto.Name,
+
+            Url = dto.Url,
+
+            Slug = dto.Slug,
+
+            ParentId = dto.ParentId,
+
+        };
+
+
+        var id = await _categoryService.CreateCategoryAsync(createDto);
+        return Ok($"Category created {id}");
     }
 }

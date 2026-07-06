@@ -1,23 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-namespace ShopDomain.Models
+namespace ShopDomain.Models;
+
+[Table("categories")]
+public class Category : BaseEntity
 {
-    public class Category
-    {
-        public int Id { get; set; }
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    [Column("id")]
+    public int Id { get; set; }
 
-        public string Title { get; set; }
+    [Required]
+    [MaxLength(100)]
+    [Column("name")]
+    public string Name { get; set; } = string.Empty;
 
-        public string Description { get; set; }
+    [Required]
+    [MaxLength(100)]
+    [Column("slug")]
+    public string Slug { get; set; } = string.Empty;
 
-        public string Image { get; set; }
+    [Column("url")]
+    public string Url { get; set; } = string.Empty;
 
-        public DateTime CreatedAt { get; set; }
+    [Column("is_active")]
+    public bool IsActive { get; set; } = true;
 
-        public DateTime UpdatedAt { get; set; }
+    // Self-referencing (підкатегорія)
+    [Column("parent_id")]
+    public int? ParentId { get; set; }
 
-        public bool IsShow { get; set; }
-    }
+    [ForeignKey(nameof(ParentId))]
+    public Category? Parent { get; set; }
+
+    // Navigation properties
+    public ICollection<Category> SubCategories { get; set; } = new List<Category>();
+    public ICollection<Product> Products { get; set; } = new List<Product>();
 }

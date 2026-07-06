@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
 
-namespace ShopApp.Controllers;
+namespace ShopApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

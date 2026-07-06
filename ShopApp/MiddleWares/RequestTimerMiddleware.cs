@@ -1,4 +1,4 @@
-﻿namespace ShopApp.MiddleWares
+﻿namespace ShopApi.MiddleWares
 {
     public class RequestTimerMiddleware
     {

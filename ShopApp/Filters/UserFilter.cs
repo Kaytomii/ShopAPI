@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Text.Json;
 
-namespace ShopApp.Filters
+namespace ShopApi.Filters
 {
     public class UserFilter : Attribute, IAsyncActionFilter
     {
