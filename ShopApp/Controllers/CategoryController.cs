@@ -10,35 +10,33 @@ namespace ShopApi.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
-public class CategoryController(ICategoryService _categoryService, IImageService _imageService) : ControllerBase
+public class CategoryController : ControllerBase
 {
-    [HttpPost]
-    public async Task<IActionResult> CreateCategory([FromForm] CategoryCreateRequest dto)
+    private readonly ICategoryTreeService _treeService;
+
+    public CategoryController(ICategoryTreeService treeService)
     {
-        if (dto.Image != null)
+        _treeService = treeService;
+    }
 
-        {
+    [HttpGet("{id:int}/parents")]
+    public async Task<IActionResult> GetParents(int id)
+    {
+        var parents = await _treeService.GetParentCategoriesAsync(id);
+        return Ok(parents);
+    }
 
-            dto.Url = (await _imageService.SaveFileAsync(dto.Image, Enums.ImageDirectoryEnum.Categories)) ?? string.Empty;
+    [HttpGet("{id:int}/children")]
+    public async Task<IActionResult> GetChildren(int id)
+    {
+        var children = await _treeService.GetChildCategoriesAsync(id);
+        return Ok(children);
+    }
 
-        }
-
-
-        var createDto = new CategoryCreateDTO
-        {
-
-            Name = dto.Name,
-
-            Url = dto.Url,
-
-            Slug = dto.Slug,
-
-            ParentId = dto.ParentId,
-
-        };
-
-
-        var id = await _categoryService.CreateCategoryAsync(createDto);
-        return Ok($"Category created {id}");
+    [HttpGet("tree")]
+    public async Task<IActionResult> GetTree()
+    {
+        var tree = await _treeService.GetCategoryTreeAsync();
+        return Ok(tree);
     }
 }

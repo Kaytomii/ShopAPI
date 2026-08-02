@@ -1,14 +1,31 @@
-﻿using System;
+﻿using ShopDomain.Enums;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Globalization;
 using System.Text;
 
 namespace ShopDomain.Models;
 
-public class User
+[Table("users")]
+public class User : BaseEntity
 {
-    public int id { get; set; }
-    public string Login { get; set; } = string.Empty;
-    public string HashPassword { get; set; } = string.Empty;
+    [Column("id")]
+    public Guid Id { get; set; } = Guid.NewGuid();
+
+    [Required]
+    [EmailAddress]
+    [Column("email")]
     public string Email { get; set; } = string.Empty;
+
+    [Required]
+    [Column("password_hash")]
+    public string PasswordHash { get; set; } = string.Empty;
+
+    [Column("role")]
+    public UserRole Role { get; set; } = UserRole.User;
+
+    [Column("is_active")]
+    public bool IsActive { get; set; } = true;
 }
