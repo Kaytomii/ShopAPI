@@ -47,6 +47,17 @@ namespace ShopApi
                 });
             });
 
+            //builder.Services.AddCors(options =>
+            //{
+            //    options.AddPolicy("ProductionPolicy", policy =>
+            //    {
+            //        policy.WithOrigins("https://example.com", "https://www.example.com")
+            //              .WithMethods("GET", "POST", "PUT", "DELETE")
+            //              .WithHeaders("Content-Type", "Authorization");
+            //    });
+            //});
+
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             // ================= Swagger + JWT =================
@@ -84,6 +95,7 @@ namespace ShopApi
             builder.Services.AddScoped<Shop.Application.Interfaces.Services.IProductService, ProductService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<Shop.Application.Interfaces.Services.ICachingService, MemoryCachingService>();
             builder.Services.AddScoped<IImageService, ImageService>();
             builder.Services.AddScoped<IJWTService, JWTService>();
             builder.Services.AddSingleton<IHashHelper, HashHelper>();
@@ -135,6 +147,8 @@ namespace ShopApi
 
             app.UseMiddleware<RequestTimerMiddleware>();
             app.UseStaticFiles();
+
+            app.UseCors("ProductionPolicy");
 
             app.MapControllers();
 

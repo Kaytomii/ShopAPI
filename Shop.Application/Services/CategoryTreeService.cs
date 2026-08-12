@@ -13,15 +13,23 @@ public class CategoryTreeService : ICategoryTreeService
 {
     private readonly ICategoryRepository _repo;
     private readonly IMapper _mapper;
+    private readonly ICachingService _cache;
 
-    public CategoryTreeService(ICategoryRepository repo, IMapper mapper)
+    public CategoryTreeService(ICategoryRepository repo, IMapper mapper, ICachingService cache)
     {
         _repo = repo;
         _mapper = mapper;
+        _cache = cache;
     }
 
     public async Task<IEnumerable<CategoryReadDTO>> GetParentCategoriesAsync(int id)
     {
+        var key = $"category:{id}:parents";
+
+        var cached = await _cache.GetAsync<IEnumerable<CategoryReadDTO>>(key);
+        if (cached != null)
+            return cached;
+
         var result = new List<Category>();
         var current = await _repo.GetByIdAsync(id);
 
@@ -34,11 +42,20 @@ public class CategoryTreeService : ICategoryTreeService
             current = parent;
         }
 
-        return _mapper.Map<IEnumerable<CategoryReadDTO>>(result);
+        var dto = _mapper.Map<IEnumerable<CategoryReadDTO>>(result);
+
+        await _cache.SetAsync(key, dto);
+        return dto;
     }
 
     public async Task<IEnumerable<CategoryReadDTO>> GetChildCategoriesAsync(int id)
     {
+        var key = $"category:{id}:children";
+
+        var cached = await _cache.GetAsync<IEnumerable<CategoryReadDTO>>(key);
+        if (cached != null)
+            return cached;
+
         var all = await _repo.GetAllAsync();
         var result = new List<Category>();
 
@@ -54,11 +71,20 @@ public class CategoryTreeService : ICategoryTreeService
 
         FindChildren(id);
 
-        return _mapper.Map<IEnumerable<CategoryReadDTO>>(result);
+        var dto = _mapper.Map<IEnumerable<CategoryReadDTO>>(result);
+
+        await _cache.SetAsync(key, dto);
+        return dto;
     }
 
     public async Task<IEnumerable<CategoryTreeDTO>> GetCategoryTreeAsync()
     {
+        var key = "categories:tree";
+
+        var cached = await _cache.GetAsync<IEnumerable<CategoryTreeDTO>>(key);
+        if (cached != null)
+            return cached;
+
         var all = (await _repo.GetAllAsync()).ToList();
 
         List<CategoryTreeDTO> BuildTree(int? parentId)
@@ -75,6 +101,9 @@ public class CategoryTreeService : ICategoryTreeService
                 .ToList();
         }
 
-        return BuildTree(null);
+        var tree = BuildTree(null);
+
+        await _cache.SetAsync(key, tree);
+        return tree;
     }
 }
