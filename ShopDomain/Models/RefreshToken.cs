@@ -6,7 +6,7 @@ using System.Text;
 
 namespace ShopDomain.Models;
 
-[Table("refresh_token")]
+[Table("refresh_tokens")]
 public class RefreshToken
 {
     [Key]
@@ -22,16 +22,12 @@ public class RefreshToken
     public DateTime ExpiresAt { get; set; }
 
     [Required]
-    [Column("is_revoked")]
-    public bool IsRevoked { get; set; }
-
-    [Required]
     [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     [Required]
-    [ForeignKey("User")]
     [Column("user_id")]
     public Guid UserId { get; set; }
+
     public User User { get; set; } = null!;
 }
