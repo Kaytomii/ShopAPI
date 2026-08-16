@@ -3,9 +3,6 @@ using Shop.Application.DTOs.ProductDTOs;
 using Shop.Application.Interfaces.Repository;
 using Shop.Application.Interfaces.Services;
 using ShopDomain.Models;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Shop.Application.Services;
 
@@ -13,13 +10,14 @@ public class ProductService : IProductService
 {
     private readonly IProductRepository _repo;
     private readonly IMapper _mapper;
-    private readonly int _maxImages;
+    private readonly ICachingService _cache;
+    private readonly int _maxImages = 10;
 
-    public ProductService(IProductRepository repo, IMapper mapper, IConfiguration config)
+    public ProductService(IProductRepository repo, IMapper mapper, ICachingService cache)
     {
         _repo = repo;
         _mapper = mapper;
-        _maxImages = config.GetValue<int>("ProductImages:MaxCount");
+        _cache = cache;
     }
 
     public async Task<int> CreateProductAsync(ProductCreateDTO dto)
@@ -33,18 +31,41 @@ public class ProductService : IProductService
             .Select(url => new ProductImage { Url = url })
             .ToList();
 
-        return await _repo.AddAsync(product);
+        var id = await _repo.AddAsync(product);
+
+        await _cache.RemoveAsync("products:all");
+        await _cache.RemoveAsync($"product:{id}");
+
+        return id;
     }
 
     public async Task<IEnumerable<ProductReadDTO>> GetAllAsync()
     {
+        var cached = await _cache.GetAsync<IEnumerable<ProductReadDTO>>("products:all");
+        if (cached != null)
+            return cached;
+
         var products = await _repo.GetAllAsync();
-        return _mapper.Map<IEnumerable<ProductReadDTO>>(products);
+        var dto = _mapper.Map<IEnumerable<ProductReadDTO>>(products);
+
+        await _cache.SetAsync("products:all", dto, TimeSpan.FromMinutes(15));
+        return dto;
     }
 
     public async Task<ProductReadDTO?> GetByIdAsync(int id)
     {
+        var key = $"product:{id}";
+        var cached = await _cache.GetAsync<ProductReadDTO>(key);
+        if (cached != null)
+            return cached;
+
         var product = await _repo.GetByIdAsync(id);
-        return product == null ? null : _mapper.Map<ProductReadDTO>(product);
+        if (product == null)
+            return null;
+
+        var dto = _mapper.Map<ProductReadDTO>(product);
+
+        await _cache.SetAsync(key, dto, TimeSpan.FromMinutes(15));
+        return dto;
     }
 }
