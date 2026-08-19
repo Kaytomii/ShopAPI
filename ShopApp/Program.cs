@@ -35,6 +35,10 @@ namespace ShopApi
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
             var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
 
+            builder.Services.Configure<RabbitMqSettings>(
+            builder.Configuration.GetSection("RabbitMq")
+        );
+
             builder.Services.AddAutoMapper(_ => { }, typeof(CategoryProfile).Assembly);
 
             builder.Services.AddCors(options =>
@@ -95,7 +99,8 @@ namespace ShopApi
             builder.Services.AddScoped<Shop.Application.Interfaces.Services.IProductService, ProductService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
-            builder.Services.AddScoped<Shop.Application.Interfaces.Services.ICachingService, MemoryCachingService>();
+            //builder.Services.AddScoped<Shop.Application.Interfaces.Services.ICachingService, MemoryCachingService>();
+            builder.Services.AddScoped<Shop.Application.Interfaces.Services.ICachingService, RedisCachingService>();
             builder.Services.AddScoped<IImageService, ImageService>();
             builder.Services.AddScoped<IJWTService, JWTService>();
             builder.Services.AddSingleton<IHashHelper, HashHelper>();

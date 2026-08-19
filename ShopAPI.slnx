@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="RabbitMqReader/RabbitMqReader.csproj" Id="51d03a75-12ab-413e-b1ae-113da9d04ddb" />
   <Project Path="Shop.Application/Shop.Application.csproj" Id="1298e13d-08a8-4563-a132-3da2e1bc8b8a" />
   <Project Path="Shop.Infrastructure/Shop.Infrastructure.csproj" Id="12e0f3d8-2ab4-4101-bcd3-67502808ae2b" />
   <Project Path="ShopApp/ShopApi.csproj" />
