@@ -106,9 +106,11 @@ namespace ShopApi
             builder.Services.AddSingleton<IHashHelper, HashHelper>();
             builder.Services.AddScoped<IAdminService, AdminService>();
             builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddSingleton<IQueueService,RabbitMqService>();
 
             builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
             builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+            builder.Services.AddHostedService<RabbitMqReaderService>();
 
             // ================= Authentication BEFORE Build =================
             builder.Services
