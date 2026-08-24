@@ -104,6 +104,8 @@ namespace ShopApi
             builder.Services.AddScoped<IImageService, ImageService>();
             builder.Services.AddScoped<IJWTService, JWTService>();
             builder.Services.AddSingleton<IHashHelper, HashHelper>();
+            builder.Services.AddScoped<IAdminService, AdminService>();
+            builder.Services.AddScoped<IEmailService, EmailService>();
 
             builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
             builder.Services.AddScoped<IAuthRepository, AuthRepository>();

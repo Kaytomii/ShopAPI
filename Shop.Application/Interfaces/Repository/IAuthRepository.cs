@@ -8,6 +8,10 @@ namespace Shop.Application.Interfaces.Repository;
 public interface IAuthRepository
 {
     Task<User?> RegisterUserAsync(User user, string hash);
-    Task<bool> IsExistEmailAsync(string email);
+    Task<bool> IsEmailExistsAsync(string email);
     Task<User?> GetUserByEmailAsync(string email);
+    Task<User?> GetUserByIdAsync(Guid id);
+    Task SaveResetTokenAsync(Guid userId, string token, DateTime expiresAt);
+    Task<User?> GetUserByResetTokenAsync(string token);
+    Task UpdatePasswordAsync(Guid userId, string newHash);
 }
