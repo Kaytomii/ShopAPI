@@ -1,4 +1,5 @@
 ﻿using Shop.Application.Interfaces.Services;
+using ShopDomain.Models;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -49,5 +50,24 @@ public class EmailService : IEmailService
         };
 
         await client.SendMailAsync(message);
+    }
+    public async Task SendOrderCreatedEmailAsync(Guid userId, List<OrderDetail> items, decimal total)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("Your order has been created:");
+        sb.AppendLine();
+
+        foreach (var i in items)
+            sb.AppendLine($"Product: {i.ProductId} | Price: {i.Price} | Count: {i.Count}");
+
+        sb.AppendLine();
+        sb.AppendLine($"Total: {total}");
+
+        await SendMailAsync(userId, sb.ToString());
+    }
+
+    public async Task SendOrderWaitingEmailAsync(Guid userId)
+    {
+        await SendMailAsync(userId, "Some products are not available. Your order is waiting.");
     }
 }
