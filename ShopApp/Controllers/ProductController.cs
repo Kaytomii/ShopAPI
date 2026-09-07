@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using Shop.Application.DTOs.ProductDTOs;
+using Shop.Application.Queries.Product;
 using ShopApi.Enums;
 using ShopApi.Interfaces;
 using ShopApi.Requests.Products;
@@ -13,11 +15,13 @@ namespace ShopApp.Controllers
     {
         private readonly IProductService _service;
         private readonly IImageService _imageService;
+        private readonly IMediator _mediator;
 
-        public ProductController(IProductService service, IImageService imageService)
+        public ProductController(IProductService service, IImageService imageService, IMediator mediator)
         {
             _service = service;
             _imageService = imageService;
+            _mediator = mediator;
         }
 
         [HttpPost]
@@ -58,7 +62,7 @@ namespace ShopApp.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var product = await _service.GetByIdAsync(id);
+            var product = await _mediator.Send(new GetProductByIdQuery(id));
             if (product == null) return NotFound();
 
             return Ok(product);

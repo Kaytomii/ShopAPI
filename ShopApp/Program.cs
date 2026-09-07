@@ -7,6 +7,7 @@ using Shop.Application.Interfaces.Helpers;
 using Shop.Application.Interfaces.Repository;
 using Shop.Application.Interfaces.Services;
 using Shop.Application.Mapping;
+using Shop.Application.Queries.Product;
 using Shop.Application.Services;
 using Shop.Infrastructure.Configuration;
 using Shop.Infrastructure.Data;
@@ -110,7 +111,7 @@ namespace ShopApi
 
             builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
             builder.Services.AddScoped<IAuthRepository, AuthRepository>();
-            builder.Services.AddHostedService<RabbitMqReaderService>();
+            //builder.Services.AddHostedService<RabbitMqReaderService>();
 
             // ================= Authentication BEFORE Build =================
             builder.Services
@@ -139,6 +140,11 @@ namespace ShopApi
                 });
 
             builder.Services.AddAuthorization();
+
+            builder.Services.AddMediatR(cfg =>
+            {
+                cfg.RegisterServicesFromAssembly(typeof(GetProductByIdHandler).Assembly);
+            });
 
 
 
