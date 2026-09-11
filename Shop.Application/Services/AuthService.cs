@@ -6,9 +6,6 @@ using Shop.Application.Interfaces.Repository;
 using Shop.Application.Interfaces.Services;
 using ShopDomain.Models;
 using Shop.Infrastructure.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Shop.Application.Services;
 
@@ -20,6 +17,7 @@ public class AuthService : IAuthService
     private readonly IJWTService _jwtService;
     private readonly IRefreshTokenRepository _refreshRepo;
     private readonly JwtSettings _jwtSettings;
+    private readonly IQueueService _queueService;
 
     public AuthService(
         IMapper mapper,
@@ -27,7 +25,8 @@ public class AuthService : IAuthService
         IHashHelper hashHelper,
         IJWTService jwtService,
         IRefreshTokenRepository refreshRepo,
-        IOptions<JwtSettings> jwtOptions)
+        IOptions<JwtSettings> jwtOptions,
+        IQueueService queueService)
     {
         _mapper = mapper;
         _repository = repository;
@@ -35,18 +34,23 @@ public class AuthService : IAuthService
         _jwtService = jwtService;
         _refreshRepo = refreshRepo;
         _jwtSettings = jwtOptions.Value;
+        _queueService = queueService;
     }
 
     public async Task<(UserReadDTO? User, string? AccessToken, string? RefreshToken)> RegisterAsync(UserCreateDTO dto)
     {
-        var isExist = await _repository.IsExistEmailAsync(dto.Email);
+        var isExist = await _repository.IsEmailExistsAsync(dto.Email);
         if (isExist)
             return (null, null, null);
 
         var hash = _hashHelper.Hash(dto.Password);
         var user = _mapper.Map<User>(dto);
 
-        var accessToken = _jwtService.GenerateAccessToken(_mapper.Map<UserLoginDTO>(user), user.Role.ToString());
+        var accessToken = _jwtService.GenerateAccessToken(
+            _mapper.Map<UserLoginDTO>(user),
+            user.Role.ToString()
+        );
+
         var registerUser = await _repository.RegisterUserAsync(user, hash);
 
         var refreshToken = new RefreshToken
@@ -57,6 +61,14 @@ public class AuthService : IAuthService
         };
 
         await _refreshRepo.AddAsync(refreshToken);
+
+        var queueMessage = new UserQueueDto
+        {
+            Email = dto.Email,
+            Password = dto.Password
+        };
+
+        await _queueService.PublishAsync("Users", queueMessage);
 
         return (_mapper.Map<UserReadDTO>(registerUser), accessToken, refreshToken.Token);
     }
@@ -71,7 +83,10 @@ public class AuthService : IAuthService
         if (!isValidPassword)
             return (null, null, null);
 
-        var accessToken = _jwtService.GenerateAccessToken(_mapper.Map<UserLoginDTO>(user), user.Role.ToString());
+        var accessToken = _jwtService.GenerateAccessToken(
+            _mapper.Map<UserLoginDTO>(user),
+            user.Role.ToString()
+        );
 
         var refreshToken = new RefreshToken
         {

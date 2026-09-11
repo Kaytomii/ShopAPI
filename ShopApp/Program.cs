@@ -161,6 +161,7 @@ namespace ShopApi
             app.UseAuthorization();
 
             app.UseMiddleware<RequestTimerMiddleware>();
+            app.UseMiddleware<CancellationTokenHandleMiddleWare>();
             app.UseStaticFiles();
 
             app.UseCors("ProductionPolicy");
