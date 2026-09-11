@@ -20,6 +20,7 @@ public class ShopDbContext : DbContext
     public DbSet<ResetToken> ResetTokens { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<OrderDetail> OrderDetails { get; set; }
+    public DbSet<ProductFeedback> ProductFeedbacks { get; set; }
 
     // Автоматично встановлює CreatedAt і UpdatedAt перед збереженням
     public override int SaveChanges()

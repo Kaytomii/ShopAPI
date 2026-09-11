@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Shop.Application.DTOs.ProductDTOs;
 using Shop.Application.Queries.Product;
+using Shop.Infrastructure.Services;
 using ShopApi.Enums;
 using ShopApi.Interfaces;
 using ShopApi.Requests.Products;
@@ -16,12 +17,14 @@ namespace ShopApp.Controllers
         private readonly IProductService _service;
         private readonly IImageService _imageService;
         private readonly IMediator _mediator;
+        private readonly ProductFeedbackService _feedbackService;
 
-        public ProductController(IProductService service, IImageService imageService, IMediator mediator)
+        public ProductController(IProductService service, IImageService imageService, IMediator mediator, ProductFeedbackService feedbackService)
         {
             _service = service;
             _imageService = imageService;
             _mediator = mediator;
+            _feedbackService = feedbackService;
         }
 
         [HttpPost]
@@ -48,7 +51,7 @@ namespace ShopApp.Controllers
                 ImageUrls = urls
             };
 
-            var id = await _service.CreateProductAsync(dto);
+            var id = await _service.AddProduct(dto);
             return Ok(id);
         }
 
@@ -66,6 +69,22 @@ namespace ShopApp.Controllers
             if (product == null) return NotFound();
 
             return Ok(product);
+        }
+        [HttpPost("feedback")]
+        public async Task<IActionResult> AddFeedback([FromBody] ProductFeedbackDto dto)
+        {
+            var feedback = new ProductFeedback
+            {
+                ProductId = dto.ProductId,
+                UserId = dto.UserId,
+                Type = dto.Type,
+                Message = dto.Message,
+                Rating = dto.Rating
+            };
+
+            await _feedbackService.AddAsync(feedback);
+
+            return Ok("Feedback saved to MongoDB");
         }
     }
 }

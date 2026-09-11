@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Shop.Application.Interfaces.Helpers;
@@ -27,21 +26,24 @@ namespace ShopApi
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // ================= Services =================
+            // ================= DbContext =================
             builder.Services.AddDbContext<ShopDbContext>(options =>
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServerConnection"));
             });
 
+            // ================= Configuration =================
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
             var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
 
             builder.Services.Configure<RabbitMqSettings>(
-            builder.Configuration.GetSection("RabbitMq")
-        );
+                builder.Configuration.GetSection("RabbitMq")
+            );
 
+            // ================= AutoMapper =================
             builder.Services.AddAutoMapper(_ => { }, typeof(CategoryProfile).Assembly);
 
+            // ================= CORS =================
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll", policy =>
@@ -50,70 +52,77 @@ namespace ShopApi
                           .AllowAnyMethod()
                           .AllowAnyHeader();
                 });
+
+                options.AddPolicy("ProductionPolicy", policy =>
+                {
+                    policy.WithOrigins("https://example.com", "https://www.example.com")
+                          .WithMethods("GET", "POST", "PUT", "DELETE")
+                          .WithHeaders("Content-Type", "Authorization");
+                });
             });
 
-            //builder.Services.AddCors(options =>
-            //{
-            //    options.AddPolicy("ProductionPolicy", policy =>
-            //    {
-            //        policy.WithOrigins("https://example.com", "https://www.example.com")
-            //              .WithMethods("GET", "POST", "PUT", "DELETE")
-            //              .WithHeaders("Content-Type", "Authorization");
-            //    });
-            //});
-
-
+            // ================= Controllers & Swagger =================
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
-            // ================= Swagger + JWT =================
+
             builder.Services.AddSwaggerGen(options =>
             {
+                options.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "Shop API",
+                    Version = "v1"
+                });
 
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
-
                     Type = SecuritySchemeType.Http,
-
                     Scheme = "bearer",
-
                     BearerFormat = "JWT",
-
                     Name = "Authorization",
-
                     In = ParameterLocation.Header,
-
                     Description = "Enter JWT token"
                 });
 
-
-                options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
                 {
-
-                    [new OpenApiSecuritySchemeReference("Bearer", document)] = []
-
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
                 });
-
             });
-            //builder.Services.AddSwaggerGen();
 
             // ================= DI =================
             builder.Services.AddScoped<Shop.Application.Interfaces.Services.IProductService, ProductService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
-            //builder.Services.AddScoped<Shop.Application.Interfaces.Services.ICachingService, MemoryCachingService>();
             builder.Services.AddScoped<Shop.Application.Interfaces.Services.ICachingService, RedisCachingService>();
             builder.Services.AddScoped<IImageService, ImageService>();
             builder.Services.AddScoped<IJWTService, JWTService>();
             builder.Services.AddSingleton<IHashHelper, HashHelper>();
             builder.Services.AddScoped<IAdminService, AdminService>();
             builder.Services.AddScoped<IEmailService, EmailService>();
-            builder.Services.AddSingleton<IQueueService,RabbitMqService>();
+            builder.Services.AddSingleton<IQueueService, RabbitMqService>();
 
             builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
             builder.Services.AddScoped<IAuthRepository, AuthRepository>();
-            //builder.Services.AddHostedService<RabbitMqReaderService>();
+            builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+            builder.Services.AddScoped<IProductRepository, ProductRepository>();
+            builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
-            // ================= Authentication BEFORE Build =================
+            builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDb"));
+
+            builder.Services.AddSingleton<MongoDbService>();
+            builder.Services.AddScoped<ProductFeedbackService>();
+
+            // ================= Authentication =================
             builder.Services
                 .AddAuthentication(options =>
                 {
@@ -128,25 +137,22 @@ namespace ShopApi
                         ValidateAudience = true,
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
-
                         ValidIssuer = jwtSettings.Issuer,
                         ValidAudience = jwtSettings.Audience,
                         IssuerSigningKey = new SymmetricSecurityKey(
                             Encoding.UTF8.GetBytes(jwtSettings.Key)
                         ),
-
                         ClockSkew = TimeSpan.Zero
                     };
                 });
 
             builder.Services.AddAuthorization();
 
+            // ================= MediatR =================
             builder.Services.AddMediatR(cfg =>
             {
                 cfg.RegisterServicesFromAssembly(typeof(GetProductByIdHandler).Assembly);
             });
-
-
 
             // ================= Build =================
             var app = builder.Build();
@@ -154,6 +160,7 @@ namespace ShopApi
             // ================= Middleware =================
             app.UseSwagger();
             app.UseSwaggerUI();
+
             app.UseCors("AllowAll");
 
             app.UseHttpsRedirection();
@@ -164,12 +171,11 @@ namespace ShopApi
             app.UseMiddleware<CancellationTokenHandleMiddleWare>();
             app.UseStaticFiles();
 
-            app.UseCors("ProductionPolicy");
+            // app.UseCors("ProductionPolicy");
 
             app.MapControllers();
 
             app.Run();
-
         }
     }
 }
