@@ -101,6 +101,8 @@ namespace ShopApi
             builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             builder.Services.AddScoped<IProductRepository, ProductRepository>();
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+            builder.Services.AddScoped<IUserAddressRepository, UserAddressRepository>();
+            builder.Services.AddScoped<UserAddressService>();
 
             builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDb"));
 

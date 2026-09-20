@@ -21,6 +21,7 @@ public class ShopDbContext : DbContext
     public DbSet<Order> Orders { get; set; }
     public DbSet<OrderDetail> OrderDetails { get; set; }
     public DbSet<ProductFeedback> ProductFeedbacks { get; set; }
+    public DbSet<UserAddress> UserAddresses { get; set; }
 
     // Автоматично встановлює CreatedAt і UpdatedAt перед збереженням
     public override int SaveChanges()
