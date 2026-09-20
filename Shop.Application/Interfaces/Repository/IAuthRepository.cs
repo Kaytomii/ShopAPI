@@ -14,4 +14,5 @@ public interface IAuthRepository
     Task SaveResetTokenAsync(Guid userId, string token, DateTime expiresAt);
     Task<User?> GetUserByResetTokenAsync(string token);
     Task UpdatePasswordAsync(Guid userId, string newHash);
+    Task<RefreshToken?> GetRefreshTokenAsync(string token);
 }

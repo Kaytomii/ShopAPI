@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Shop.Application.DTOs.ProductDTOs;
+using Shop.Application.Interfaces.Services;
 using Shop.Application.Queries.Product;
 using Shop.Infrastructure.Services;
 using ShopApi.Enums;
@@ -14,12 +15,12 @@ namespace ShopApp.Controllers
     [Route("api/[controller]")]
     public class ProductController : ControllerBase
     {
-        private readonly IProductService _service;
+        private readonly Shop.Application.Interfaces.Services.IProductService _service;
         private readonly IImageService _imageService;
         private readonly IMediator _mediator;
         private readonly ProductFeedbackService _feedbackService;
 
-        public ProductController(IProductService service, IImageService imageService, IMediator mediator, ProductFeedbackService feedbackService)
+        public ProductController(Shop.Application.Interfaces.Services.IProductService service, IImageService imageService, IMediator mediator, ProductFeedbackService feedbackService)
         {
             _service = service;
             _imageService = imageService;
@@ -36,7 +37,7 @@ namespace ShopApp.Controllers
             {
                 foreach (var img in req.Images)
                 {
-                    var url = await _imageService.SaveFileAsync(img, ImageDirectoryEnum.Products);
+                    var url = await _imageService.SaveFileAsync(img, ShopApi.Enums.ImageDirectoryEnum.Categories);
                     if (url != null)
                         urls.Add(url);
                 }
@@ -51,7 +52,7 @@ namespace ShopApp.Controllers
                 ImageUrls = urls
             };
 
-            var id = await _service.AddProduct(dto);
+            var id = await _service.CreateProductAsync(dto);
             return Ok(id);
         }
 

@@ -70,4 +70,9 @@ public class EmailService : IEmailService
     {
         await SendMailAsync(userId, "Some products are not available. Your order is waiting.");
     }
+
+    private Task SendMailAsync(Guid userId, string body)
+    {
+        return Task.CompletedTask;
+    }
 }

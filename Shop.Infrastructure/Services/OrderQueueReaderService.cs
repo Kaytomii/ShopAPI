@@ -1,18 +1,22 @@
-﻿using RabbitMQ.Client;
+using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Shop.Application.DTOs.OrdersDTOs;
 using Shop.Application.Interfaces.Repository;
 using Shop.Application.Interfaces.Services;
+using Shop.Infrastructure.Configuration;
 using ShopDomain.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json;
 
 namespace Shop.Infrastructure.Services;
 
 public class OrderQueueReaderService : BackgroundService
 {
-    private readonly ConnectionFactory _factory;
+    private readonly RabbitMqSettings _rabbitMqSettings;
     private readonly IProductRepository _productRepo;
     private readonly IOrderRepository _orderRepo;
     private readonly IEmailService _emailService;
@@ -20,40 +24,18 @@ public class OrderQueueReaderService : BackgroundService
     public OrderQueueReaderService(
         IProductRepository productRepo,
         IOrderRepository orderRepo,
-        IEmailService emailService)
+        IEmailService emailService,
+        IOptions<RabbitMqSettings> rabbitMqOptions)
     {
-        _factory = new ConnectionFactory
-        {
-            HostName = "localhost",
-            UserName = "guest",
-            Password = "guest"
-        };
-
+        _rabbitMqSettings = rabbitMqOptions.Value;
         _productRepo = productRepo;
         _orderRepo = orderRepo;
         _emailService = emailService;
     }
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var connection = _factory.CreateConnection();
-        var channel = connection.CreateModel();
-
-        channel.QueueDeclare("Orders", durable: true, exclusive: false, autoDelete: false);
-
-        var consumer = new AsyncEventingBasicConsumer(channel);
-
-        consumer.Received += async (sender, args) =>
-        {
-            var json = Encoding.UTF8.GetString(args.Body.ToArray());
-            var dto = JsonSerializer.Deserialize<OrderCreateDto>(json);
-
-            await ProcessOrderAsync(dto);
-        };
-
-        channel.BasicConsume("Orders", autoAck: true, consumer);
-
-        return Task.CompletedTask;
+        await Task.CompletedTask;
     }
 
     private async Task ProcessOrderAsync(OrderCreateDto dto)
@@ -66,7 +48,7 @@ public class OrderQueueReaderService : BackgroundService
         {
             var product = await _productRepo.GetByIdAsync(p.ProductId);
 
-            if (product == null || product.Count < p.Count)
+            if (product == null || product.StockQty < p.Count)
             {
                 allAvailable = false;
                 continue;
@@ -74,7 +56,7 @@ public class OrderQueueReaderService : BackgroundService
 
             items.Add(new OrderDetail
             {
-                ProductId = p.ProductId,
+                ProductId = Guid.Parse(product.Id.ToString()),
                 Price = product.Price,
                 Count = p.Count
             });

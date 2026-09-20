@@ -1,4 +1,5 @@
-﻿using Shop.Application.Interfaces.Repository;
+﻿using Microsoft.EntityFrameworkCore;
+using Shop.Application.Interfaces.Repository;
 using Shop.Infrastructure.Data;
 using ShopDomain.Models;
 using System;

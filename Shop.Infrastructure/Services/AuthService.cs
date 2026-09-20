@@ -1,17 +1,23 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Tokens;
 using Shop.Application.DTOs.UserDTOs;
 using Shop.Application.Interfaces.Helpers;
 using Shop.Application.Interfaces.Repository;
 using Shop.Application.Interfaces.Services;
-using ShopDomain.Models;
 using Shop.Infrastructure.Configuration;
+using ShopDomain.Models;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
-namespace Shop.Application.Services;
+namespace Shop.Infrastructure.Services;
 
 public class AuthService : IAuthService
 {
     private readonly IMapper _mapper;
+    private readonly IAuthRepository _authRepository;
     private readonly IAuthRepository _repository;
     private readonly IHashHelper _hashHelper;
     private readonly IJWTService _jwtService;
@@ -26,12 +32,14 @@ public class AuthService : IAuthService
         IJWTService jwtService,
         IRefreshTokenRepository refreshRepo,
         IOptions<JwtSettings> jwtOptions,
-        IQueueService queueService)
+        IQueueService queueService,
+        IAuthRepository authRepository)
     {
         _mapper = mapper;
         _repository = repository;
         _hashHelper = hashHelper;
         _jwtService = jwtService;
+        _authRepository = authRepository;
         _refreshRepo = refreshRepo;
         _jwtSettings = jwtOptions.Value;
         _queueService = queueService;
@@ -98,5 +106,61 @@ public class AuthService : IAuthService
         await _refreshRepo.AddAsync(refreshToken);
 
         return (_mapper.Map<UserReadDTO>(user), accessToken, refreshToken.Token);
+    }
+
+    public async Task<string?> RefreshAsync(string refreshToken)
+    {
+        var tokenEntity = await _authRepository.GetRefreshTokenAsync(refreshToken);
+        if (tokenEntity == null || tokenEntity.ExpiresAt < DateTime.UtcNow)
+            return null;
+
+        var user = await _authRepository.GetUserByIdAsync(tokenEntity.UserId);
+        if (user == null)
+            return null;
+
+        var claims = new List<Claim>
+        {
+            new Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Email, user.Email),
+            new Claim(ClaimTypes.Role, user.Role.ToString())
+        };
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var jwt = new JwtSecurityToken(
+            issuer: _jwtSettings.Issuer,
+            audience: _jwtSettings.Audience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiresMinutes),
+            signingCredentials: creds
+        );
+
+        var accessToken = new JwtSecurityTokenHandler().WriteToken(jwt);
+
+        return accessToken;
+    }
+
+    public Task<User?> GetUserByEmailAsync(string email)
+    {
+        return _authRepository.GetUserByEmailAsync(email);
+    }
+
+    public async Task CreateExternalUserAsync(User user)
+    {
+        await _authRepository.RegisterUserAsync(user, _hashHelper.Hash(Guid.NewGuid().ToString()));
+    }
+
+    public async Task<string> GenerateRefreshTokenAsync(Guid userId)
+    {
+        var token = new RefreshToken
+        {
+            Token = Guid.NewGuid().ToString(),
+            UserId = userId,
+            ExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.ExpiresRefreshTokenDay)
+        };
+
+        await _refreshRepo.AddAsync(token);
+        return token.Token;
     }
 }

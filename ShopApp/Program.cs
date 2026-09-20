@@ -9,6 +9,7 @@ using Shop.Application.Mapping;
 using Shop.Application.Queries.Product;
 using Shop.Application.Services;
 using Shop.Infrastructure.Configuration;
+using Shop.Infrastructure.Configuration;
 using Shop.Infrastructure.Data;
 using Shop.Infrastructure.Helpers;
 using Shop.Infrastructure.Repositories;
@@ -26,13 +27,11 @@ namespace ShopApi
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // ================= DbContext =================
             builder.Services.AddDbContext<ShopDbContext>(options =>
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServerConnection"));
             });
 
-            // ================= Configuration =================
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
             var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
 
@@ -40,10 +39,8 @@ namespace ShopApi
                 builder.Configuration.GetSection("RabbitMq")
             );
 
-            // ================= AutoMapper =================
             builder.Services.AddAutoMapper(_ => { }, typeof(CategoryProfile).Assembly);
 
-            // ================= CORS =================
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll", policy =>
@@ -61,7 +58,6 @@ namespace ShopApi
                 });
             });
 
-            // ================= Controllers & Swagger =================
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
 
@@ -84,10 +80,9 @@ namespace ShopApi
                 });
             });
 
-            // ================= DI =================
             builder.Services.AddScoped<Shop.Application.Interfaces.Services.IProductService, ProductService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
-            builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IAuthService, Shop.Infrastructure.Services.AuthService>();
             builder.Services.AddScoped<Shop.Application.Interfaces.Services.ICachingService, RedisCachingService>();
             builder.Services.AddScoped<IImageService, ImageService>();
             builder.Services.AddScoped<IJWTService, JWTService>();
@@ -102,14 +97,13 @@ namespace ShopApi
             builder.Services.AddScoped<IProductRepository, ProductRepository>();
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IUserAddressRepository, UserAddressRepository>();
+            builder.Services.AddScoped<IUserProviderRepository, UserProviderRepository>();
             builder.Services.AddScoped<UserAddressService>();
 
             builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDb"));
-
             builder.Services.AddSingleton<MongoDbService>();
             builder.Services.AddScoped<ProductFeedbackService>();
 
-            // ================= Authentication =================
             builder.Services
                 .AddAuthentication(options =>
                 {
@@ -135,16 +129,13 @@ namespace ShopApi
 
             builder.Services.AddAuthorization();
 
-            // ================= MediatR =================
             builder.Services.AddMediatR(cfg =>
             {
                 cfg.RegisterServicesFromAssembly(typeof(GetProductByIdHandler).Assembly);
             });
 
-            // ================= Build =================
             var app = builder.Build();
 
-            // ================= Middleware =================
             app.UseSwagger();
             app.UseSwaggerUI();
 
@@ -157,8 +148,6 @@ namespace ShopApi
             app.UseMiddleware<RequestTimerMiddleware>();
             app.UseMiddleware<CancellationTokenHandleMiddleWare>();
             app.UseStaticFiles();
-
-            // app.UseCors("ProductionPolicy");
 
             app.MapControllers();
 

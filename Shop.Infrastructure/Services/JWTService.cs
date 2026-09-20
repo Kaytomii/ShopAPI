@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Shop.Application.DTOs.UserDTOs;
-using Shop.Infrastructure.Configuration;
 using Shop.Application.Interfaces.Services;
+using Shop.Infrastructure.Configuration;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;

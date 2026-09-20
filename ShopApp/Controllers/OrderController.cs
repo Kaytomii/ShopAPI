@@ -16,9 +16,9 @@ public class OrderController : ControllerBase
     }
 
     [HttpPost("create")]
-    public IActionResult CreateOrder([FromBody] OrderCreateDto dto)
+    public async Task<IActionResult> CreateOrder([FromBody] OrderCreateDto dto)
     {
-        _queueService.Publish("Orders", dto);
+        await _queueService.PublishAsync("Orders", dto);
         return Ok("Order sent to queue");
     }
 }

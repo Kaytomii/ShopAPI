@@ -22,6 +22,8 @@ public class ShopDbContext : DbContext
     public DbSet<OrderDetail> OrderDetails { get; set; }
     public DbSet<ProductFeedback> ProductFeedbacks { get; set; }
     public DbSet<UserAddress> UserAddresses { get; set; }
+    public DbSet<Provider> Providers { get; set; }
+    public DbSet<UserProvider> UsersProviders { get; set; }
 
     // Автоматично встановлює CreatedAt і UpdatedAt перед збереженням
     public override int SaveChanges()
@@ -93,5 +95,10 @@ public class ShopDbContext : DbContext
                   .HasForeignKey(i => i.ProductId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
+        modelBuilder.Entity<Provider>().HasData(
+            new Provider { Id = 1, Name = "google" },
+            new Provider { Id = 2, Name = "facebook" },
+            new Provider { Id = 3, Name = "apple" }
+        );
     }
 }

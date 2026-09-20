@@ -7,10 +7,9 @@ namespace RabbitMqReader;
 
 sealed class User
 {
-    public string Email {  get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
 }
-
 
 internal class Program
 {
@@ -29,13 +28,8 @@ internal class Program
 
         consumer.ReceivedAsync += async (sender, e) =>
         {
-            // отримуємо байти повідомлення
             var body = e.Body.ToArray();
-
-            // конвертуємо у string
             var json = Encoding.UTF8.GetString(body);
-
-            // десеріалізуємо JSON у об'єкт
             var message = JsonSerializer.Deserialize<User>(json);
 
             Console.WriteLine($"Email: {message.Email}");

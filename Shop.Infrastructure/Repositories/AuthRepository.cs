@@ -70,4 +70,8 @@ public class AuthRepository(ShopDbContext _context) : IAuthRepository
         user.PasswordHash = newHash;
         await _context.SaveChangesAsync();
     }
+    public async Task<RefreshToken?> GetRefreshTokenAsync(string token)
+    {
+        return await _context.RefreshTokens.FirstOrDefaultAsync(x => x.Token == token);
+    }
 }

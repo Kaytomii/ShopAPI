@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Hosting;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Shop.Application.DTOs.UserDTOs;
@@ -16,11 +17,6 @@ public class RabbitMqReaderService : BackgroundService
     private IConnection? _connection;
     private IChannel? _channel;
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="logger"></param>
-    /// <param name="options"></param>
     public RabbitMqReaderService(
         ILogger<RabbitMqReaderService> logger,
         IOptions<RabbitMqSettings> options)
@@ -73,7 +69,6 @@ public class RabbitMqReaderService : BackgroundService
         _logger.LogInformation(
             "RabbitMQ Reader started. Waiting messages...");
 
-        // Замість Console.ReadLine()
         await Task.Delay(
             Timeout.Infinite,
             stoppingToken);
