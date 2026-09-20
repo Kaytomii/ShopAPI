@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ShopApi.Interfaces;
-using Shop.Application.Interfaces.Services;
 using Shop.Application.DTOs.CategoryDTOs;
+using Shop.Application.Interfaces.Services;
+using Shop.Application.Queries.Category;
+using ShopApi.Interfaces;
 using ShopApi.Requests.Categories;
+using MediatR;
 
 
 namespace ShopApi.Controllers;
@@ -13,10 +15,12 @@ namespace ShopApi.Controllers;
 public class CategoryController : ControllerBase
 {
     private readonly ICategoryTreeService _treeService;
+    private readonly IMediator _mediator;
 
-    public CategoryController(ICategoryTreeService treeService)
+    public CategoryController(ICategoryTreeService treeService, IMediator mediator)
     {
         _treeService = treeService;
+        _mediator = mediator;
     }
 
     [HttpGet("{id:int}/parents")]
@@ -38,5 +42,15 @@ public class CategoryController : ControllerBase
     {
         var tree = await _treeService.GetCategoryTreeAsync();
         return Ok(tree);
+    }
+    [HttpGet("{slug}")]
+    public async Task<ActionResult<CategoryReadDTO>> GetCategoryBySlug(string slug)
+    {
+        var dto = await _mediator.Send(new GetCategoryBySlugQuery(slug));
+
+        if (dto == null)
+            return NotFound();
+
+        return Ok(dto);
     }
 }

@@ -12,4 +12,5 @@ public interface ICategoryRepository
     Task<Category?> GetByIdAsync(int id);
     Task<bool> DeleteAsync(Category category);
     Task<bool> UpdateAsync(Category category);
+    Task<Category?> GetBySlugAsync(string slug);
 }
