@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -8,7 +9,7 @@ using Shop.Application.Interfaces.Services;
 using Shop.Application.Mapping;
 using Shop.Application.Queries.Product;
 using Shop.Application.Services;
-using Shop.Infrastructure.Configuration;
+using Shop.Application.Validators;
 using Shop.Infrastructure.Configuration;
 using Shop.Infrastructure.Data;
 using Shop.Infrastructure.Helpers;
@@ -17,6 +18,7 @@ using Shop.Infrastructure.Services;
 using ShopApi.Interfaces;
 using ShopApi.MiddleWares;
 using ShopApi.Services;
+using StackExchange.Redis;
 using System.Text;
 
 namespace ShopApi
@@ -32,8 +34,13 @@ namespace ShopApi
                 options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServerConnection"));
             });
 
-            builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
-            var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
+            builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
+            var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
+
+            if (jwtSettings == null || string.IsNullOrEmpty(jwtSettings.Key))
+            {
+                throw new InvalidOperationException("JwtSettings configuration is missing or incomplete. Ensure 'JwtSettings' section exists in appsettings.json with Key, Issuer, and Audience.");
+            }
 
             builder.Services.Configure<RabbitMqSettings>(
                 builder.Configuration.GetSection("RabbitMq")
@@ -60,6 +67,7 @@ namespace ShopApi
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddProblemDetails();
 
             builder.Services.AddSwaggerGen(options =>
             {
@@ -83,7 +91,6 @@ namespace ShopApi
             builder.Services.AddScoped<Shop.Application.Interfaces.Services.IProductService, ProductService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
             builder.Services.AddScoped<IAuthService, Shop.Infrastructure.Services.AuthService>();
-            builder.Services.AddScoped<Shop.Application.Interfaces.Services.ICachingService, RedisCachingService>();
             builder.Services.AddScoped<IImageService, ImageService>();
             builder.Services.AddScoped<IJWTService, JWTService>();
             builder.Services.AddSingleton<IHashHelper, HashHelper>();
@@ -99,10 +106,19 @@ namespace ShopApi
             builder.Services.AddScoped<IUserAddressRepository, UserAddressRepository>();
             builder.Services.AddScoped<IUserProviderRepository, UserProviderRepository>();
             builder.Services.AddScoped<UserAddressService>();
+            //builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+            builder.Services.AddValidatorsFromAssemblyContaining<CategoryValidator>();
 
             builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDb"));
             builder.Services.AddSingleton<MongoDbService>();
             builder.Services.AddScoped<ProductFeedbackService>();
+            builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+            {
+                var config = builder.Configuration.GetConnectionString("Redis");
+                return ConnectionMultiplexer.Connect(config);
+            });
+            builder.Services.AddScoped<ICachingService, RedisCachingService>();
 
             builder.Services
                 .AddAuthentication(options =>
@@ -147,6 +163,7 @@ namespace ShopApi
 
             app.UseMiddleware<RequestTimerMiddleware>();
             app.UseMiddleware<CancellationTokenHandleMiddleWare>();
+            app.UseExceptionHandler();
             app.UseStaticFiles();
 
             app.MapControllers();

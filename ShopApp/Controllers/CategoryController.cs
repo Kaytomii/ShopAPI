@@ -16,11 +16,13 @@ public class CategoryController : ControllerBase
 {
     private readonly ICategoryTreeService _treeService;
     private readonly IMediator _mediator;
+    private readonly ICategoryService _categoryService;
 
-    public CategoryController(ICategoryTreeService treeService, IMediator mediator)
+    public CategoryController(ICategoryTreeService treeService, IMediator mediator, ICategoryService categoryService)
     {
         _treeService = treeService;
         _mediator = mediator;
+        _categoryService = categoryService;
     }
 
     [HttpGet("{id:int}/parents")]
@@ -52,5 +54,19 @@ public class CategoryController : ControllerBase
             return NotFound();
 
         return Ok(dto);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateCategory([FromBody] CategoryCreateDTO dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var categoryId = await _categoryService.CreateCategoryAsync(dto);
+
+        if (categoryId == null)
+            return BadRequest(new { message = "Failed to create category" });
+
+        return CreatedAtAction(nameof(GetCategoryBySlug), new { slug = dto.Slug }, new { id = categoryId });
     }
 }
